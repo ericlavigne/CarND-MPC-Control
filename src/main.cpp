@@ -92,16 +92,45 @@ int main() {
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
 
+          cout << endl << "x:" << px << " y:" << py << " psi:" << psi << " speed:" << v << endl;
+          cout << "ptsx size:" << ptsx.size() << " first:" << ptsx[0] << " last:" << ptsx[ptsx.size()-1]  << endl;
+          cout << "ptsy size:" << ptsy.size() << " first:" << ptsy[0] << " last:" << ptsy[ptsy.size()-1]  << endl << endl;
+
           /*
           * TODO: Calculate steering angle and throttle using MPC.
           *
           * Both are in between [-1, 1].
           *
           */
-          double steer_value;
-          double throttle_value;
+          double steer_value = 0.0;
+          double throttle_value = 1.0;
 
           json msgJson;
+
+          //Display the waypoints/reference line
+          vector<double> next_x_vals;
+          vector<double> next_y_vals;
+
+          next_x_vals.clear();
+          next_y_vals.clear();
+          cout << "Waypoints:" << endl;
+          for(int i = 0; i < ptsx.size(); i++) {
+            double distance = sqrt(pow(ptsx[i]-px,2) + pow(ptsy[i]-py,2));
+            double direction_abs = atan2(ptsy[i]-py,ptsx[i]-px);
+            double direction_rel = direction_abs - psi;
+            double x = distance * cos(direction_rel);
+            double y = distance * sin(direction_rel);
+            next_x_vals.push_back(x);
+            next_y_vals.push_back(y);
+            cout << "  dist:" << distance << " dir_abs:" << direction_abs << " psi:" << psi << " dir_rel:" << direction_rel << endl;
+          }
+          cout << endl;
+
+          //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
+          // the points in the simulator are connected by a Yellow line
+          msgJson["next_x"] = next_x_vals;
+          msgJson["next_y"] = next_y_vals;
+
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
           msgJson["steering_angle"] = steer_value;
@@ -117,17 +146,6 @@ int main() {
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
 
-          //Display the waypoints/reference line
-          vector<double> next_x_vals;
-          vector<double> next_y_vals;
-
-          //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
-          // the points in the simulator are connected by a Yellow line
-
-          msgJson["next_x"] = next_x_vals;
-          msgJson["next_y"] = next_y_vals;
-
-
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
           std::cout << msg << std::endl;
           // Latency
@@ -139,7 +157,7 @@ int main() {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          this_thread::sleep_for(chrono::milliseconds(100));
+          // this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {
