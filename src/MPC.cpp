@@ -150,7 +150,15 @@ class FG_eval {
 //
 // MPC class definition implementation.
 //
-MPC::MPC() {}
+MPC::MPC() {
+    this->plan_x.clear();
+    this->plan_y.clear();
+    for(int i = 0; i < N; i++) {
+        this->plan_x.push_back(0.0);
+        this->plan_y.push_back(0.0);
+    }
+}
+
 MPC::~MPC() {}
 
 vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
@@ -261,6 +269,11 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
     // Cost
     auto cost = solution.obj_value;
     std::cout << "Cost " << cost << std::endl;
+
+    for(int i = 0; i < N; i++) {
+        plan_x[i] = solution.x[x_start+i];
+        plan_y[i] = solution.x[y_start+i];
+    }
 
     return {solution.x[delta_start],solution.x[a_start]};
 }

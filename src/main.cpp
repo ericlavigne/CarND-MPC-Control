@@ -124,7 +124,7 @@ int main() {
 
           // Represent current state: px, py, psi, v, cte, epsi (should also have steer and throttle)
           Eigen::VectorXd state(6);
-          state << px, py, psi, v, - poly[0], - atan2(poly[1],1.0);
+          state << 0.0, 0.0, 0.0, v, - poly[0], - atan2(poly[1],1.0);
 
           // Invoke MPC solver
           vector<double> actuations = mpc.Solve(state,poly);
@@ -142,11 +142,8 @@ int main() {
           msgJson["throttle"] = throttle;
 
           // Transmit MPC predicted trajectory (displayed as green line)
-          vector<double> mpc_x_vals;
-          vector<double> mpc_y_vals;
-
-          msgJson["mpc_x"] = mpc_x_vals;
-          msgJson["mpc_y"] = mpc_y_vals;
+          msgJson["mpc_x"] = mpc.plan_x;
+          msgJson["mpc_y"] = mpc.plan_y;
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
           std::cout << msg << std::endl;
