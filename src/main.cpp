@@ -65,6 +65,14 @@ Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
   return result;
 }
 
+Eigen::VectorXd vector_std_to_eigen(vector<double> vec) {
+  Eigen::VectorXd result(vec.size());
+  for(int i = 0; i < vec.size(); i++) {
+    result(i) = vec[i];
+  }
+  return result;
+}
+
 int main() {
   uWS::Hub h;
 
@@ -96,21 +104,12 @@ int main() {
           cout << "ptsx size:" << ptsx.size() << " first:" << ptsx[0] << " last:" << ptsx[ptsx.size()-1]  << endl;
           cout << "ptsy size:" << ptsy.size() << " first:" << ptsy[0] << " last:" << ptsy[ptsy.size()-1]  << endl << endl;
 
-          /*
-          * TODO: Calculate steering angle and throttle using MPC.
-          *
-          * Both are in between [-1, 1].
-          *
-          */
-          double steer_value = 0.0;
-          double throttle_value = 1.0;
 
           json msgJson;
 
-          //Display the waypoints/reference line
+          // Convert waypoints ptsx,ptsy to vehicle coordinate system. Simulator displays as yellow line.
           vector<double> next_x_vals;
           vector<double> next_y_vals;
-
           next_x_vals.clear();
           next_y_vals.clear();
           cout << "Waypoints:" << endl;
@@ -125,14 +124,22 @@ int main() {
             cout << "  dist:" << distance << " dir_abs:" << direction_abs << " psi:" << psi << " dir_rel:" << direction_rel << endl;
           }
           cout << endl;
-
-          //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
-          // the points in the simulator are connected by a Yellow line
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
 
+          // Fit polynomial to waypoints
+          Eigen::VectorXd poly = polyfit(vector_std_to_eigen(next_x_vals),vector_std_to_eigen(next_y_vals),4);
+          cout << "Polynomial:" << endl << poly << endl << endl;
+
+          // Invoke MPC solver
+
+          // Transmit solution: steering (-1,1), throttle (-1,1), and plan (mpc_x,y_vals, green line)
+
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
+
+          double steer_value = 0.0;
+          double throttle_value = 1.0;
           msgJson["steering_angle"] = steer_value;
           msgJson["throttle"] = throttle_value;
 
