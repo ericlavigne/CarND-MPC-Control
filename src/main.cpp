@@ -138,7 +138,7 @@ int main() {
           if(steer > 1.0) steer = 1.0;
           if(steer < -1.0) steer = -1.0;
           double throttle = actuations[1];
-          msgJson["steering_angle"] = steer;
+          msgJson["steering_angle"] = - steer;
           msgJson["throttle"] = throttle;
 
           // Transmit MPC predicted trajectory (displayed as green line)

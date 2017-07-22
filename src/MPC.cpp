@@ -26,7 +26,8 @@ Eigen::VectorXd poly_derivative(Eigen::VectorXd coeffs) {
 
 // Need to see three seconds ahead to handle sharpest turns at 110 MPH.
 // Actuation delay of 100 millis makes shorter timesteps useless.
-size_t N = 30;
+// But in the beginning, use smaller lookahead to simplify calculations.
+size_t N = 10;
 double dt = 0.1;
 
 // This value assumes the model presented in the classroom is used.
