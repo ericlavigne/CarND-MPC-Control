@@ -69,9 +69,15 @@ class FG_eval {
   typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
   void operator()(ADvector& fg, const ADvector& vars) {
       // First element of fg is cost.
-      // Remaining elements of fg represent how physics affects state.
-      // vars has estimates of state and proposed actuations and should
-      // be used to estimate results (physics) in fg.
+
+      // Remaining elements of fg represent errors in physics.
+      // For each aspect of physics that I model, I need to
+      // create an expression that is expected to be equal to 0.
+
+      // vars contains all state and actuations.
+      // vars is automatically modified in order to
+      // satisfy the physics constraints in fg
+      // as well as to minimize the cost.
 
       // Start cost at 0.0 and add cost aspects later.
       fg[0] = 0.0;
