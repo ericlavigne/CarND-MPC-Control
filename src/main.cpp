@@ -32,15 +32,6 @@ string hasData(string s) {
   return "";
 }
 
-// Evaluate a polynomial.
-double polyeval(Eigen::VectorXd coeffs, double x) {
-  double result = 0.0;
-  for (int i = 0; i < coeffs.size(); i++) {
-    result += coeffs[i] * pow(x, i);
-  }
-  return result;
-}
-
 // Fit a polynomial.
 // Adapted from
 // https://github.com/JuliaMath/Polynomials.jl/blob/master/src/Polynomials.jl#L676-L716
@@ -131,24 +122,28 @@ int main() {
           Eigen::VectorXd poly = polyfit(vector_std_to_eigen(next_x_vals),vector_std_to_eigen(next_y_vals),4);
           cout << "Polynomial:" << endl << poly << endl << endl;
 
+          // Represent current state: px, py, psi, v, cte, epsi (should also have steer and throttle)
+          Eigen::VectorXd state(6);
+          state << px, py, psi, v, - poly[0], - atan2(poly[1],1.0);
+
           // Invoke MPC solver
+          vector<double> actuations = mpc.Solve(state,poly);
 
           // Transmit solution: steering (-1,1), throttle (-1,1), and plan (mpc_x,y_vals, green line)
 
           // NOTE: Remember to divide by deg2rad(25) before you send the steering value back.
           // Otherwise the values will be in between [-deg2rad(25), deg2rad(25] instead of [-1, 1].
 
-          double steer_value = 0.0;
-          double throttle_value = 1.0;
-          msgJson["steering_angle"] = steer_value;
-          msgJson["throttle"] = throttle_value;
+          double steer = actuations[0] / deg2rad(25);
+          if(steer > 1.0) steer = 1.0;
+          if(steer < -1.0) steer = -1.0;
+          double throttle = actuations[1];
+          msgJson["steering_angle"] = steer;
+          msgJson["throttle"] = throttle;
 
-          //Display the MPC predicted trajectory 
+          // Transmit MPC predicted trajectory (displayed as green line)
           vector<double> mpc_x_vals;
           vector<double> mpc_y_vals;
-
-          //.. add (x,y) points to list here, points are in reference to the vehicle's coordinate system
-          // the points in the simulator are connected by a Green line
 
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;

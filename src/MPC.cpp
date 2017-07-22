@@ -1,12 +1,32 @@
 #include "MPC.h"
+#include <iostream>
 #include <cppad/cppad.hpp>
 #include <cppad/ipopt/solve.hpp>
 #include "Eigen-3.3/Eigen/Core"
 
 using CppAD::AD;
 
-// TODO: Set the timestep length and duration
-size_t N = 10;
+
+// Evaluate a polynomial.
+AD<double> poly_eval(Eigen::VectorXd coeffs, AD<double> x) {
+    double result = 0.0;
+    for (int i = 0; i < coeffs.size(); i++) {
+        result += coeffs[i] * pow(x, i);
+    }
+    return result;
+}
+
+Eigen::VectorXd poly_derivative(Eigen::VectorXd coeffs) {
+    Eigen::VectorXd deriv(coeffs.size()-1);
+    for(int i = 0; i < coeffs.size()-1; i++) {
+        deriv(i) = coeffs(i+1) * (i+1);
+    }
+    return deriv;
+}
+
+// Need to see three seconds ahead to handle sharpest turns at 110 MPH.
+// Actuation delay of 100 millis makes shorter timesteps useless.
+size_t N = 30;
 double dt = 0.1;
 
 // This value assumes the model presented in the classroom is used.
@@ -21,18 +41,109 @@ double dt = 0.1;
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
 
+// Aim for 40 MPH in the beginning. Will increase this to 120 MPH later.
+double ref_v = 30;
+
+// Variety of info dumped into one big vector. Keep track of what each section means.
+size_t x_start = 0;
+size_t y_start = x_start + N;
+size_t psi_start = y_start + N;
+size_t v_start = psi_start + N;
+size_t cte_start = v_start + N;
+size_t epsi_start = cte_start + N;
+size_t delta_start = epsi_start + N;
+size_t a_start = delta_start + N - 1; // Because there are only N-1 delta and a values
+
+
 class FG_eval {
  public:
-  // Fitted polynomial coefficients
+  // Fitted polynomial coefficients and corresponding derivative
   Eigen::VectorXd coeffs;
-  FG_eval(Eigen::VectorXd coeffs) { this->coeffs = coeffs; }
+  Eigen::VectorXd deriv_coeffs;
+
+  FG_eval(Eigen::VectorXd coeffs) {
+      this->coeffs = coeffs;
+      this->deriv_coeffs = poly_derivative(coeffs);
+  }
 
   typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
   void operator()(ADvector& fg, const ADvector& vars) {
-    // TODO: implement MPC
-    // `fg` a vector of the cost constraints, `vars` is a vector of variable values (state & actuators)
-    // NOTE: You'll probably go back and forth between this function and
-    // the Solver function below.
+      // First element of fg is cost.
+      // Remaining elements of fg represent how physics affects state.
+      // vars has estimates of state and proposed actuations and should
+      // be used to estimate results (physics) in fg.
+
+      // Start cost at 0.0 and add cost aspects later.
+      fg[0] = 0.0;
+
+      // Cost of deviating from the intended position, orientation, and speed
+      for (int t = 0; t < N; t++) {
+          fg[0] += CppAD::pow(vars[cte_start + t], 2);
+          fg[0] += CppAD::pow(vars[epsi_start + t], 2);
+          fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
+      }
+
+      // Minimize the use of actuators.
+      for (int t = 0; t < N - 1; t++) {
+          fg[0] += CppAD::pow(vars[delta_start + t], 2);
+          fg[0] += CppAD::pow(vars[a_start + t], 2);
+      }
+
+      // Minimize change in actuators (jerkiness).
+      for (int t = 0; t < N - 2; t++) {
+          fg[0] += CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+          fg[0] += CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
+      }
+
+      // Initial values can't be changed.
+      fg[1 + x_start] = vars[x_start];
+      fg[1 + y_start] = vars[y_start];
+      fg[1 + psi_start] = vars[psi_start];
+      fg[1 + v_start] = vars[v_start];
+      fg[1 + cte_start] = vars[cte_start];
+      fg[1 + epsi_start] = vars[epsi_start];
+
+      // Apply physics
+      for (int t = 1; t < N; t++) {
+          // The state at time t+1 .
+          AD<double> x1 = vars[x_start + t];
+          AD<double> y1 = vars[y_start + t];
+          AD<double> psi1 = vars[psi_start + t];
+          AD<double> v1 = vars[v_start + t];
+          AD<double> cte1 = vars[cte_start + t];
+          AD<double> epsi1 = vars[epsi_start + t];
+
+          // The state at time t.
+          AD<double> x0 = vars[x_start + t - 1];
+          AD<double> y0 = vars[y_start + t - 1];
+          AD<double> psi0 = vars[psi_start + t - 1];
+          AD<double> v0 = vars[v_start + t - 1];
+          AD<double> cte0 = vars[cte_start + t - 1];
+          AD<double> epsi0 = vars[epsi_start + t - 1];
+
+          // Only consider the actuation at time t.
+          AD<double> delta0 = vars[delta_start + t - 1];
+          AD<double> a0 = vars[a_start + t - 1];
+
+          AD<double> f0 = poly_eval(coeffs,x1);
+          AD<double> psides0 = CppAD::atan(poly_eval(deriv_coeffs,x1);
+
+          // x_[t+1] = x[t] + v[t] * cos(psi[t]) * dt
+          // y_[t+1] = y[t] + v[t] * sin(psi[t]) * dt
+          // psi_[t+1] = psi[t] + v[t] / Lf * delta[t] * dt
+          // v_[t+1] = v[t] + a[t] * dt
+          // cte[t+1] = f(x[t]) - y[t] + v[t] * sin(epsi[t]) * dt
+          // epsi[t+1] = psi[t] - psides[t] + v[t] * delta[t] / Lf * dt
+
+          fg[1 + x_start + t] = x1 - (x0 + v0 * CppAD::cos(psi0) * dt);
+          fg[1 + y_start + t] = y1 - (y0 + v0 * CppAD::sin(psi0) * dt);
+          fg[1 + psi_start + t] = psi1 - (psi0 + v0 * delta0 / Lf * dt);
+          fg[1 + v_start + t] = v1 - (v0 + a0 * dt);
+          fg[1 + cte_start + t] =
+                  cte1 - ((f0 - y0) + (v0 * CppAD::sin(epsi0) * dt));
+          fg[1 + epsi_start + t] =
+                  epsi1 - ((psi0 - psides0) + v0 * delta0 / Lf * dt);
+      }
   }
 };
 
@@ -117,5 +228,5 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   //
   // {...} is shorthand for creating a vector, so auto x1 = {1.0,2.0}
   // creates a 2 element double vector.
-  return {};
+  return {0.0,1.0};
 }
