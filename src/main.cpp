@@ -127,7 +127,7 @@ int main() {
           state << 0.0, 0.0, 0.0, v, - poly[0], - atan2(poly[1],1.0);
 
           // Invoke MPC solver
-          vector<double> actuations = mpc.Solve(state,poly);
+          vector<double> actuations = mpc.Solve(state,poly,0.1);
 
           // Transmit solution: steering (-1,1), throttle (-1,1), and plan (mpc_x,y_vals, green line)
 
@@ -156,7 +156,7 @@ int main() {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
-          // this_thread::sleep_for(chrono::milliseconds(100));
+          this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {

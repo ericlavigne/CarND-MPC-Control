@@ -168,7 +168,7 @@ MPC::MPC() {
 
 MPC::~MPC() {}
 
-vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
+vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs, double actuation_delay) {
     typedef CPPAD_TESTVECTOR(double) Dvector;
 
     double px = state[0];
