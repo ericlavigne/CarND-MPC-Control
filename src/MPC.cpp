@@ -38,14 +38,14 @@ size_t N = 10;
 double dt = 0.05;
 
 // Cost parameters
-double ref_speed = 60;
+double ref_speed = 70;
 double speed_weight = 1.0;
 double direction_weight = 1.0;
 double road_center_weight = 6.0;
 double on_road_weight = 1.0;
 double minimal_steer_weight = 1.0;
 double minimal_acceleration_weight = 1.0;
-double steer_jerk_weight = 1000.0;
+double steer_jerk_weight = 4000.0;
 double acceleration_jerk_weight = 1.0;
 
 // This value assumes the model presented in the classroom is used.
