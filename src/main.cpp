@@ -76,7 +76,7 @@ int main() {
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
     string sdata = string(data).substr(0, length);
-    cout << sdata << endl;
+    //cout << sdata << endl;
     if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
       string s = hasData(sdata);
       if (s != "") {
@@ -91,10 +91,9 @@ int main() {
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
 
-          cout << endl << "x:" << px << " y:" << py << " psi:" << psi << " speed:" << v << endl;
-          cout << "ptsx size:" << ptsx.size() << " first:" << ptsx[0] << " last:" << ptsx[ptsx.size()-1]  << endl;
-          cout << "ptsy size:" << ptsy.size() << " first:" << ptsy[0] << " last:" << ptsy[ptsy.size()-1]  << endl << endl;
-
+          //cout << endl << "x:" << px << " y:" << py << " psi:" << psi << " speed:" << v << endl;
+          //cout << "ptsx size:" << ptsx.size() << " first:" << ptsx[0] << " last:" << ptsx[ptsx.size()-1]  << endl;
+          //cout << "ptsy size:" << ptsy.size() << " first:" << ptsy[0] << " last:" << ptsy[ptsy.size()-1]  << endl << endl;
 
           json msgJson;
 
@@ -103,7 +102,7 @@ int main() {
           vector<double> next_y_vals;
           next_x_vals.clear();
           next_y_vals.clear();
-          cout << "Waypoints:" << endl;
+          //cout << "Waypoints:" << endl;
           for(int i = 0; i < ptsx.size(); i++) {
             double distance = sqrt(pow(ptsx[i]-px,2) + pow(ptsy[i]-py,2));
             double direction_abs = atan2(ptsy[i]-py,ptsx[i]-px);
@@ -112,15 +111,15 @@ int main() {
             double y = distance * sin(direction_rel);
             next_x_vals.push_back(x);
             next_y_vals.push_back(y);
-            cout << "  dist:" << distance << " dir_abs:" << direction_abs << " psi:" << psi << " dir_rel:" << direction_rel << endl;
+            //cout << "  dist:" << distance << " dir_abs:" << direction_abs << " psi:" << psi << " dir_rel:" << direction_rel << endl;
           }
-          cout << endl;
+          //cout << endl;
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
 
           // Fit polynomial to waypoints
           Eigen::VectorXd poly = polyfit(vector_std_to_eigen(next_x_vals),vector_std_to_eigen(next_y_vals),4);
-          cout << "Polynomial:" << endl << poly << endl << endl;
+          //cout << "Polynomial:" << endl << poly << endl << endl;
 
           // Represent current state: px, py, psi, v, cte, epsi (should also have steer and throttle)
           Eigen::VectorXd state(4);
@@ -146,7 +145,7 @@ int main() {
           msgJson["mpc_y"] = mpc.plan_y;
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          std::cout << msg << std::endl;
+          //std::cout << msg << std::endl;
           // Latency
           // The purpose is to mimic real driving conditions where
           // the car does actuate the commands instantly.

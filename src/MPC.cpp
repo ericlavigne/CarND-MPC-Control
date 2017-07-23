@@ -49,7 +49,7 @@ double dt = 0.1;
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
 
-// Aim for 40 MPH in the beginning. Will increase this to 120 MPH later.
+// Aim for 30 MPH in the beginning. Will increase this to 120 MPH later.
 double ref_v = 30;
 
 // Variety of info dumped into one big vector. Keep track of what each section means.
@@ -94,20 +94,17 @@ class FG_eval {
       // Start cost at 0.0 and add cost aspects later.
       fg[0] = 0.0;
 
-      // Cost of deviating from the intended position and orientation
+      // Cost of deviating from the intended position, orientation, and speed
       for (int t = 0; t < N; t++) {
           fg[0] += 1.0 * CppAD::pow(vars[cte_start + t], 4);
           fg[0] += 1.0 * CppAD::pow(vars[epsi_start + t], 2);
-          //if(vars[v_start + t] < ref_v) {
-          //    fg[0] += 1.0 * CppAD::pow(ref_v - vars[v_start + t], 2);
-          //}
           fg[0] += 1.0 * CppAD::pow(vars[v_start + t] - ref_v, 2);
       }
 
       // Faster is better
       //for (int t = 0; t < N-1; t++) {
-          //fg[0] -= vars[v_start + t];
-          //fg[0] += CppAD::pow(vars[a_start + t] - 1.0, 2);
+      //    fg[0] -= vars[v_start + t];
+      //    fg[0] += CppAD::pow(vars[a_start + t] - 1.0, 2);
       //}
 
       // Minimize the use of actuators.
@@ -305,8 +302,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs, double 
     ok &= solution.status == CppAD::ipopt::solve_result<Dvector>::success;
 
     // Cost
-    auto cost = solution.obj_value;
-    std::cout << "Cost " << cost << std::endl;
+    //auto cost = solution.obj_value;
 
     for(int i = 0; i < N; i++) {
         plan_x[i] = solution.x[x_start+i];
