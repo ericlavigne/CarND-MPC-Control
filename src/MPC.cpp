@@ -50,7 +50,7 @@ double dt = 0.1;
 const double Lf = 2.67;
 
 // Aim for 30 MPH in the beginning. Will increase this to 120 MPH later.
-double ref_v = 30;
+double ref_v = 50;
 
 // Variety of info dumped into one big vector. Keep track of what each section means.
 size_t x_start = 0;
@@ -95,8 +95,11 @@ class FG_eval {
       fg[0] = 0.0;
 
       // Cost of deviating from the intended position, orientation, and speed
+      double road_center_weight = 0.0;
+      double on_road_weight = 1.0;
       for (int t = 0; t < N; t++) {
-          fg[0] += 1.0 * CppAD::pow(vars[cte_start + t], 4);
+          fg[0] += road_center_weight * CppAD::pow(CppAD::abs(vars[cte_start + t]), 2);
+          fg[0] += on_road_weight * CppAD::pow(CppAD::abs(vars[cte_start + t]), 4);
           fg[0] += 1.0 * CppAD::pow(vars[epsi_start + t], 2);
           fg[0] += 1.0 * CppAD::pow(vars[v_start + t] - ref_v, 2);
       }
