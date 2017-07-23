@@ -15,6 +15,13 @@ AD<double> poly_eval(Eigen::VectorXd coeffs, AD<double> x) {
     }
     return result;
 }
+double poly_eval(Eigen::VectorXd coeffs, double x) {
+    double result = 0.0;
+    for (int i = 0; i < coeffs.size(); i++) {
+        result += coeffs[i] * pow(x, i);
+    }
+    return result;
+}
 
 Eigen::VectorXd poly_derivative(Eigen::VectorXd coeffs) {
     Eigen::VectorXd deriv(coeffs.size()-1);
@@ -164,6 +171,8 @@ MPC::MPC() {
         this->plan_x.push_back(0.0);
         this->plan_y.push_back(0.0);
     }
+    this->previous_steer = 0.0;
+    this->previous_throttle = 0.1;
 }
 
 MPC::~MPC() {}
@@ -171,12 +180,19 @@ MPC::~MPC() {}
 vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs, double actuation_delay) {
     typedef CPPAD_TESTVECTOR(double) Dvector;
 
-    double px = state[0];
-    double py = state[1];
-    double psi = state[2];
-    double v = state[3];
-    double cte = state[4];
-    double epsi = state[5];
+    double px0 = state[0];
+    double py0 = state[1];
+    double psi0 = state[2];
+    double v0 = state[3];
+
+    Eigen::VectorXd deriv_coeffs = poly_derivative(coeffs);
+
+    double px = px0 + v0 * actuation_delay * cos(psi0);
+    double py = py0 + v0 * actuation_delay * sin(psi0);
+    double psi = psi0 + previous_steer * v0 * actuation_delay / Lf;
+    double v = v0 + previous_throttle * actuation_delay;
+    double cte = py - poly_eval(coeffs,px);
+    double epsi = psi - atan(poly_eval(deriv_coeffs,px));
 
     // N copies of each state variable
     // N-1 copies of each actuation (involve transitions between states)
@@ -282,5 +298,8 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs, double 
         plan_y[i] = solution.x[y_start+i];
     }
 
-    return {solution.x[delta_start],solution.x[a_start]};
+    previous_steer = solution.x[delta_start];
+    previous_throttle = solution.x[a_start];
+
+    return {previous_steer,previous_throttle};
 }

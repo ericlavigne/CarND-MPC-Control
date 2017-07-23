@@ -14,6 +14,8 @@ class MPC {
 
     vector<double> plan_x;
     vector<double> plan_y;
+    double previous_steer;
+    double previous_throttle;
 
     // Solve the model given an initial state and polynomial coefficients.
     // Return the first actuations.

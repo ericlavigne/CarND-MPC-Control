@@ -123,8 +123,8 @@ int main() {
           cout << "Polynomial:" << endl << poly << endl << endl;
 
           // Represent current state: px, py, psi, v, cte, epsi (should also have steer and throttle)
-          Eigen::VectorXd state(6);
-          state << 0.0, 0.0, 0.0, v, - poly[0], - atan2(poly[1],1.0);
+          Eigen::VectorXd state(4);
+          state << 0.0, 0.0, 0.0, v;
 
           // Invoke MPC solver
           vector<double> actuations = mpc.Solve(state,poly,0.1);
