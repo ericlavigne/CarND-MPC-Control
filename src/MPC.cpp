@@ -35,7 +35,18 @@ Eigen::VectorXd poly_derivative(Eigen::VectorXd coeffs) {
 // Actuation delay of 100 millis makes shorter timesteps useless.
 // But in the beginning, use smaller lookahead to simplify calculations.
 size_t N = 10;
-double dt = 0.1;
+double dt = 0.05;
+
+// Cost parameters
+double ref_speed = 50;
+double speed_weight = 1.0;
+double direction_weight = 1.0;
+double road_center_weight = 6.0;
+double on_road_weight = 1.0;
+double minimal_steer_weight = 1.0;
+double minimal_acceleration_weight = 1.0;
+double steer_jerk_weight = 500.0;
+double acceleration_jerk_weight = 1.0;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -87,18 +98,6 @@ class FG_eval {
       // vars is automatically modified in order to
       // satisfy the physics constraints in fg
       // as well as to minimize the cost.
-
-
-      // Cost parameters
-      double ref_speed = 50;
-      double speed_weight = 1.0;
-      double direction_weight = 1.0;
-      double road_center_weight = 6.0;
-      double on_road_weight = 1.0;
-      double minimal_steer_weight = 1.0;
-      double minimal_acceleration_weight = 1.0;
-      double steer_jerk_weight = 500.0;
-      double acceleration_jerk_weight = 1.0;
 
       // Start cost at 0.0 and add cost aspects later.
       fg[0] = 0.0;
@@ -201,6 +200,8 @@ MPC::~MPC() {}
 
 vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs, double actuation_delay) {
     typedef CPPAD_TESTVECTOR(double) Dvector;
+
+    time_t start_time = clock();
 
     double px0 = state[0];
     double py0 = state[1];
@@ -312,7 +313,19 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs, double 
     ok &= solution.status == CppAD::ipopt::solve_result<Dvector>::success;
 
     // Cost
-    //auto cost = solution.obj_value;
+    auto cost = solution.obj_value;
+
+    if(!ok) {
+        cout << "Optimization failed!" << endl;
+    }
+
+    time_t end_time = clock();
+
+    double time_elapsed = (end_time - start_time) * 1.0 / CLOCKS_PER_SEC;
+
+    if(time_elapsed > 0.05) {
+        cout << "Optimization took " << time_elapsed << " seconds." << endl;
+    }
 
     for(int i = 0; i < N; i++) {
         plan_x[i] = solution.x[x_start+i];
