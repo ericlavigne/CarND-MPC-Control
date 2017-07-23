@@ -49,9 +49,6 @@ double dt = 0.1;
 // This is the length from front to CoG that has a similar radius.
 const double Lf = 2.67;
 
-// Aim for 30 MPH in the beginning. Will increase this to 120 MPH later.
-double ref_v = 50;
-
 // Variety of info dumped into one big vector. Keep track of what each section means.
 size_t x_start = 0;
 size_t y_start = x_start + N;
@@ -91,17 +88,27 @@ class FG_eval {
       // satisfy the physics constraints in fg
       // as well as to minimize the cost.
 
+
+      // Cost parameters
+      double ref_speed = 50;
+      double speed_weight = 1.0;
+      double direction_weight = 1.0;
+      double road_center_weight = 1.0;
+      double on_road_weight = 1.0;
+      double minimal_steer_weight = 1.0;
+      double minimal_acceleration_weight = 1.0;
+      double steer_jerk_weight = 500.0;
+      double acceleration_jerk_weight = 1.0;
+
       // Start cost at 0.0 and add cost aspects later.
       fg[0] = 0.0;
 
       // Cost of deviating from the intended position, orientation, and speed
-      double road_center_weight = 1.0;
-      double on_road_weight = 1.0;
       for (int t = 0; t < N; t++) {
+          fg[0] += direction_weight * CppAD::pow(vars[epsi_start + t], 2);
+          fg[0] += speed_weight * CppAD::pow(vars[v_start + t] - ref_speed, 2);
           fg[0] += road_center_weight * CppAD::pow(CppAD::abs(vars[cte_start + t]), 2);
           fg[0] += on_road_weight * CppAD::pow(CppAD::abs(vars[cte_start + t]), 4);
-          fg[0] += 1.0 * CppAD::pow(vars[epsi_start + t], 2);
-          fg[0] += 1.0 * CppAD::pow(vars[v_start + t] - ref_v, 2);
       }
 
       // Faster is better
@@ -112,13 +119,11 @@ class FG_eval {
 
       // Minimize the use of actuators.
       for (int t = 0; t < N - 1; t++) {
-          fg[0] += CppAD::pow(vars[delta_start + t], 2);
-          fg[0] += CppAD::pow(vars[a_start + t], 2);
+          fg[0] += minimal_steer_weight * CppAD::pow(vars[delta_start + t], 2);
+          fg[0] += minimal_acceleration_weight * CppAD::pow(vars[a_start + t], 2);
       }
 
       // Minimize change in actuators (jerkiness).
-      double steer_jerk_weight = 500.0;
-      double acceleration_jerk_weight = 1.0;
       for (int t = 0; t < N - 2; t++) {
           fg[0] += steer_jerk_weight * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
           fg[0] += acceleration_jerk_weight * CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
