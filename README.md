@@ -34,9 +34,46 @@ polynomial plan.
 
 ## Physics-Based Prediction
 
+This MPC uses a simple physics model based on X state variables (x, y, speed, direction) and 
+two actuation variables (steering and acceleration).
+
+Physics calculations are performed for ten
+discrete time intervals spread equally over one second. A longer horizon of around three seconds would likely
+be needed for high speed, but one second is sufficient to drive safely at 30 MPH.
+
 ## Compensating for Delay
 
+All commands (steering and acceleration) are delayed by 1/10 of a second for an added challenge.
+This MPC compensates by predicting how the previous commands will affect the vehicle's state over
+the next 1/10 of a second and using that predicted future state as the starting state for the rest of
+the MPC calculation process.
+
 ## Cost Optimization
+
+The MPC uses a cost function to balance the competing requirements to stay close to the 
+planned waypoints, maintain the desired speed, and ensure a smooth ride.
+
+* Distance from center
+  * Prefer to be in the center of the road.
+  * Cost contribution is distance to the 4th power. This creates a small cost
+    for moving towards the edge of the road and a large cost for going off-road.
+* Orientation
+  * Prefer orientation in the direction of the road.
+* Speed
+  * Prefer to drive 30 MPH.
+* Minimize controls
+  * Prefer to turn the steering wheel as little as possible.
+  * Prefer to brake and accelerate as little as possible.
+* Minimize change in controls (jerkiness)
+  * Prefer steering angle to be close to the steering angle of the previous timestep.
+  * Prefer acceleration to be close to the acceleration of the previous timestep.
+* Constraints
+  * Steering angle limited to -25 degrees to 25 degrees.
+  * Acceleration limited to -1 to +1.
+  
+Ipopt and CppAD selects a series of steering and throttle values to minimize the cost
+function. The MPC selects only the first pair of steering and throttle values to
+control the vehicle.
 
 ## Dependencies
 
