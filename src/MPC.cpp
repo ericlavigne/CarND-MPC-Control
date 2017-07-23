@@ -64,20 +64,22 @@ size_t a_start = delta_start + N - 1; // Because there are only N-1 delta and a 
 
 
 class FG_eval {
- public:
-  // Fitted polynomial coefficients and corresponding derivative
-  Eigen::VectorXd coeffs;
-  Eigen::VectorXd deriv_coeffs;
+    public:
+    // Fitted polynomial coefficients and corresponding derivative
+    Eigen::VectorXd coeffs;
+    Eigen::VectorXd deriv_coeffs;
     double previous_steer;
+    double previous_throttle;
 
-  FG_eval(Eigen::VectorXd coeffs, double previous_steer) {
+    FG_eval(Eigen::VectorXd coeffs, double previous_steer, double previous_throttle) {
       this->coeffs = coeffs;
       this->deriv_coeffs = poly_derivative(coeffs);
       this->previous_steer = previous_steer;
-  }
+      this->previous_throttle = previous_throttle;
+    }
 
-  typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
-  void operator()(ADvector& fg, const ADvector& vars) {
+    typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
+    void operator()(ADvector& fg, const ADvector& vars) {
       // First element of fg is cost.
 
       // Remaining elements of fg represent errors in physics.
@@ -94,15 +96,19 @@ class FG_eval {
 
       // Cost of deviating from the intended position and orientation
       for (int t = 0; t < N; t++) {
-          fg[0] += CppAD::pow(vars[cte_start + t], 2);
-          fg[0] += CppAD::pow(vars[epsi_start + t], 2);
+          fg[0] += 1.0 * CppAD::pow(vars[cte_start + t], 2);
+          fg[0] += 1.0 * CppAD::pow(vars[epsi_start + t], 2);
+          //if(vars[v_start + t] < ref_v) {
+          //    fg[0] += 1.0 * CppAD::pow(ref_v - vars[v_start + t], 2);
+          //}
+          fg[0] += 1.0 * CppAD::pow(vars[v_start + t] - ref_v, 2);
       }
 
       // Faster is better
-      for (int t = 0; t < N-1; t++) {
-          fg[0] -= vars[v_start + t];
+      //for (int t = 0; t < N-1; t++) {
+          //fg[0] -= vars[v_start + t];
           //fg[0] += CppAD::pow(vars[a_start + t] - 1.0, 2);
-      }
+      //}
 
       // Minimize the use of actuators.
       for (int t = 0; t < N - 1; t++) {
@@ -116,6 +122,7 @@ class FG_eval {
           fg[0] += CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
       }
       fg[0] += CppAD::pow(vars[delta_start] - previous_steer, 2);
+      fg[0] += 0.0 * CppAD::pow(vars[a_start] - previous_throttle, 2);
 
       // Initial values can't be changed.
       fg[1 + x_start] = vars[x_start];
@@ -166,7 +173,7 @@ class FG_eval {
           fg[1 + epsi_start + t] =
                   epsi1 - ((psi0 - psides0) + v0 * delta0 / Lf * dt);
       }
-  }
+    }
 };
 
 //
@@ -272,7 +279,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs, double 
     constraints_upperbound[epsi_start] = epsi;
 
     // object that computes objective and constraints
-    FG_eval fg_eval(coeffs,previous_steer);
+    FG_eval fg_eval(coeffs,previous_steer,previous_throttle);
 
     // options for IPOPT solver
     std::string options;
