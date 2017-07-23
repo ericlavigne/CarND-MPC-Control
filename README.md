@@ -35,7 +35,17 @@ polynomial plan.
 ## Physics-Based Prediction
 
 This MPC uses a simple physics model based on X state variables (x, y, speed, direction) and 
-two actuation variables (steering and acceleration).
+two actuation variables (steering and acceleration). There are also two pseudo-state variables
+CTE and EPSI, representing the error in position and direction, respectively.
+
+```
+        x[t+1] = x[t] + v[t] * cos(psi[t]) * dt
+        y[t+1] = y[t] + v[t] * sin(psi[t]) * dt
+        psi_[t+1] = psi[t] + v[t] / Lf * delta[t] * dt
+        v[t+1] = v[t] + a[t] * dt
+        cte[t+1] = f(x[t]) - y[t] + v[t] * sin(epsi[t]) * dt
+        epsi[t+1] = psi[t] - psides[t] + v[t] * delta[t] / Lf * dt
+```
 
 Physics calculations are performed for ten
 discrete time intervals spread equally over one second. A longer horizon of around three seconds would likely
