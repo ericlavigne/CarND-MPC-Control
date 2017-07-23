@@ -96,7 +96,7 @@ class FG_eval {
 
       // Cost of deviating from the intended position and orientation
       for (int t = 0; t < N; t++) {
-          fg[0] += 1.0 * CppAD::pow(vars[cte_start + t], 2);
+          fg[0] += 1.0 * CppAD::pow(vars[cte_start + t], 4);
           fg[0] += 1.0 * CppAD::pow(vars[epsi_start + t], 2);
           //if(vars[v_start + t] < ref_v) {
           //    fg[0] += 1.0 * CppAD::pow(ref_v - vars[v_start + t], 2);
