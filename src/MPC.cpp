@@ -45,7 +45,7 @@ double road_center_weight = 6.0;
 double on_road_weight = 1.0;
 double minimal_steer_weight = 1.0;
 double minimal_acceleration_weight = 1.0;
-double steer_jerk_weight = 4000.0;
+double steer_jerk_weight = 10.0;
 double acceleration_jerk_weight = 1.0;
 
 // This value assumes the model presented in the classroom is used.
@@ -124,7 +124,7 @@ class FG_eval {
 
       // Minimize change in actuators (jerkiness).
       for (int t = 0; t < N - 2; t++) {
-          fg[0] += steer_jerk_weight * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+          fg[0] += steer_jerk_weight * CppAD::pow(vars[v_start] * (vars[delta_start + t + 1] - vars[delta_start + t]), 2);
           fg[0] += acceleration_jerk_weight * CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
       }
       fg[0] += steer_jerk_weight * CppAD::pow(vars[delta_start] - previous_steer, 2);
