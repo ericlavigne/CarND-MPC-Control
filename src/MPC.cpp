@@ -38,15 +38,17 @@ size_t N = 10;
 double dt = 0.05;
 
 // Cost parameters
-double ref_speed = 70;
+double ref_speed = 80;
 double speed_weight = 1.0;
 double direction_weight = 1.0;
 double road_center_weight = 6.0;
 double on_road_weight = 1.0;
 double minimal_steer_weight = 1.0;
 double minimal_acceleration_weight = 1.0;
-double steer_jerk_weight = 10.0;
-double acceleration_jerk_weight = 1.0;
+double steer_jerk_weight = 0.1;
+double acceleration_jerk_weight = 0.0025;
+double match_previous_steer_weight = 0.005;
+double match_previous_acceleration_weight = 0.0;
 
 // This value assumes the model presented in the classroom is used.
 //
@@ -124,11 +126,11 @@ class FG_eval {
 
       // Minimize change in actuators (jerkiness).
       for (int t = 0; t < N - 2; t++) {
-          fg[0] += steer_jerk_weight * CppAD::pow(vars[v_start] * (vars[delta_start + t + 1] - vars[delta_start + t]), 2);
-          fg[0] += acceleration_jerk_weight * CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
+          fg[0] += steer_jerk_weight * CppAD::pow(vars[v_start] * (vars[delta_start + t + 1] - vars[delta_start + t]) / dt, 2);
+          fg[0] += acceleration_jerk_weight * CppAD::pow((vars[a_start + t + 1] - vars[a_start + t]) / dt, 2);
       }
-      fg[0] += steer_jerk_weight * CppAD::pow(vars[delta_start] - previous_steer, 2);
-      fg[0] += acceleration_jerk_weight * CppAD::pow(vars[a_start] - previous_throttle, 2);
+      fg[0] += match_previous_steer_weight * CppAD::pow(vars[v_start] * (vars[delta_start] - previous_steer), 2);
+      fg[0] += match_previous_acceleration_weight * CppAD::pow((vars[a_start] - previous_throttle), 2);
 
       // Initial values can't be changed.
       fg[1 + x_start] = vars[x_start];
@@ -313,7 +315,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs, double 
     ok &= solution.status == CppAD::ipopt::solve_result<Dvector>::success;
 
     // Cost
-    auto cost = solution.obj_value;
+    //auto cost = solution.obj_value;
 
     if(!ok) {
         cout << "Optimization failed!" << endl;
