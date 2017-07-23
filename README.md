@@ -5,12 +5,12 @@ Self-Driving Car Engineer Nanodegree Program
 
 ---
 
-The car in the following video uses Model Predictive Control (MPC) to drive around a closed track.
+The car in the following video uses Model Predictive Control (MPC) to drive at 80 MPH around a closed track.
 This involves using a real physics model, combined with minimizing a cost function. For added challenge,
 all steering commands are delayed by 1/10 of a second so that the model needs to predict the future
 situation and determine what command would be helpful in that situation.
 
-[![project video](https://github.com/ericlavigne/CarND-MPC-Control/raw/master/recording-thumb.png)](https://youtu.be/w6B808sTIwM)
+[![project video](https://github.com/ericlavigne/CarND-MPC-Control/raw/master/recording-thumb.png)](https://youtu.be/76V_7VvCeFM)
 
 *Note: Find the latest version of this project on
 [Github](https://github.com/ericlavigne/CarND-MPC-Control).*
@@ -47,9 +47,17 @@ CTE and EPSI, representing the error in position and direction, respectively.
         epsi[t+1] = psi[t] - psides[t] + v[t] * delta[t] / Lf * dt
 ```
 
-Physics calculations are performed for ten
-discrete time intervals spread equally over one second. A longer horizon of around three seconds would likely
-be needed for high speed, but one second is sufficient to drive safely at 30 MPH.
+The MPC predicts the next 0.5 seconds, using 10 timesteps of 0.05 seconds each. This represents a
+tradeoff between calculation time, calculation accuracy, and how far in advance the MPC can predict problems.
+Increasing the number of timesteps or the size of timesteps increases calculation time. Increasing the horizon
+from 0.5 seconds to 1.0 seconds, either with 10 timesteps of 0.1 seconds or 20 timesteps of 0.05 seconds,
+increases the calculation time to more than 0.5 seconds, which is not affordable in a realtime context. Smaller
+horizons tend to cause oversteering because the MPC can't predict that turning toward the center now will cause
+an overshoot later (after the horizon).
+
+I think that increasing the speed from 80 MPH to 100 MPH would require a prediction horizon of about 3 seconds,
+so that the MPC can see how countersteering on the first turn sets the car up for a more successful second turn.
+Unfortunately, 3 seconds seems to be far more than my computer can handle.
 
 ## Compensating for Delay
 
