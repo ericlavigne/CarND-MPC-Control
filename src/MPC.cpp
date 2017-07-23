@@ -68,10 +68,12 @@ class FG_eval {
   // Fitted polynomial coefficients and corresponding derivative
   Eigen::VectorXd coeffs;
   Eigen::VectorXd deriv_coeffs;
+    double previous_steer;
 
-  FG_eval(Eigen::VectorXd coeffs) {
+  FG_eval(Eigen::VectorXd coeffs, double previous_steer) {
       this->coeffs = coeffs;
       this->deriv_coeffs = poly_derivative(coeffs);
+      this->previous_steer = previous_steer;
   }
 
   typedef CPPAD_TESTVECTOR(AD<double>) ADvector;
@@ -90,11 +92,16 @@ class FG_eval {
       // Start cost at 0.0 and add cost aspects later.
       fg[0] = 0.0;
 
-      // Cost of deviating from the intended position, orientation, and speed
+      // Cost of deviating from the intended position and orientation
       for (int t = 0; t < N; t++) {
           fg[0] += CppAD::pow(vars[cte_start + t], 2);
           fg[0] += CppAD::pow(vars[epsi_start + t], 2);
-          fg[0] += CppAD::pow(vars[v_start + t] - ref_v, 2);
+      }
+
+      // Faster is better
+      for (int t = 0; t < N-1; t++) {
+          fg[0] -= vars[v_start + t];
+          //fg[0] += CppAD::pow(vars[a_start + t] - 1.0, 2);
       }
 
       // Minimize the use of actuators.
@@ -108,6 +115,7 @@ class FG_eval {
           fg[0] += CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
           fg[0] += CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
       }
+      fg[0] += CppAD::pow(vars[delta_start] - previous_steer, 2);
 
       // Initial values can't be changed.
       fg[1 + x_start] = vars[x_start];
@@ -264,7 +272,7 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs, double 
     constraints_upperbound[epsi_start] = epsi;
 
     // object that computes objective and constraints
-    FG_eval fg_eval(coeffs);
+    FG_eval fg_eval(coeffs,previous_steer);
 
     // options for IPOPT solver
     std::string options;
