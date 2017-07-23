@@ -95,7 +95,7 @@ class FG_eval {
       fg[0] = 0.0;
 
       // Cost of deviating from the intended position, orientation, and speed
-      double road_center_weight = 0.0;
+      double road_center_weight = 1.0;
       double on_road_weight = 1.0;
       for (int t = 0; t < N; t++) {
           fg[0] += road_center_weight * CppAD::pow(CppAD::abs(vars[cte_start + t]), 2);
