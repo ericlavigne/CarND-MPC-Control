@@ -1,7 +1,42 @@
-# CarND-Controls-MPC
+# CarND MPC Control
+[![Udacity - Self-Driving Car NanoDegree](https://s3.amazonaws.com/udacity-sdc/github/shield-carnd.svg)](http://www.udacity.com/drive)
+
 Self-Driving Car Engineer Nanodegree Program
 
 ---
+
+The car in the following video uses Model Predictive Control (MPC) to drive around a closed track.
+This involves using a real physics model, combined with minimizing a cost function. For added challenge,
+all steering commands are delayed by 1/10 of a second so that the model needs to predict the future
+situation and determine what command would be helpful in that situation.
+
+[![project video](https://github.com/ericlavigne/CarND-MPC-Control/raw/master/recording-thumb.png)](https://youtu.be/w6B808sTIwM)
+
+*Note: Find the latest version of this project on
+[Github](https://github.com/ericlavigne/CarND-MPC-Control).*
+
+## Relationship to Other Components
+
+The controller is responsible for low-level control of the vehicle, such as steering, accelerating,
+and braking. The controller receives its own location from the localization component and receives speed and
+a list of waypoints from the planning component. The controller must determine an appropriate series
+of actions to balance the competing requirements to stay close to the planned waypoints, maintain
+the desired speed, and ensure a smooth ride.
+
+## Plotting a Course
+
+The controller converts waypoints into a coordinate system relative to the car's location and orientation,
+then reinterprets those waypoints as a best-fit polynomial. The continuity and smoothness of a polynomial
+makes it much more suitable for estimating positional and directional error. The positional error, also known
+as Cross-Track Error (CTE), is the distance from the car's location to the nearest point on the polynomial
+plan. The directional error is the difference in direction between the car and the nearest point on the 
+polynomial plan.
+
+## Physics-Based Prediction
+
+## Compensating for Delay
+
+## Cost Optimization
 
 ## Dependencies
 
