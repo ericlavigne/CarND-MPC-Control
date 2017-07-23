@@ -93,7 +93,7 @@ class FG_eval {
       double ref_speed = 50;
       double speed_weight = 1.0;
       double direction_weight = 1.0;
-      double road_center_weight = 1.0;
+      double road_center_weight = 6.0;
       double on_road_weight = 1.0;
       double minimal_steer_weight = 1.0;
       double minimal_acceleration_weight = 1.0;
