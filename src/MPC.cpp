@@ -114,12 +114,14 @@ class FG_eval {
       }
 
       // Minimize change in actuators (jerkiness).
+      double steer_jerk_weight = 500.0;
+      double acceleration_jerk_weight = 1.0;
       for (int t = 0; t < N - 2; t++) {
-          fg[0] += CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
-          fg[0] += CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
+          fg[0] += steer_jerk_weight * CppAD::pow(vars[delta_start + t + 1] - vars[delta_start + t], 2);
+          fg[0] += acceleration_jerk_weight * CppAD::pow(vars[a_start + t + 1] - vars[a_start + t], 2);
       }
-      fg[0] += CppAD::pow(vars[delta_start] - previous_steer, 2);
-      fg[0] += 0.0 * CppAD::pow(vars[a_start] - previous_throttle, 2);
+      fg[0] += steer_jerk_weight * CppAD::pow(vars[delta_start] - previous_steer, 2);
+      fg[0] += acceleration_jerk_weight * CppAD::pow(vars[a_start] - previous_throttle, 2);
 
       // Initial values can't be changed.
       fg[1 + x_start] = vars[x_start];
